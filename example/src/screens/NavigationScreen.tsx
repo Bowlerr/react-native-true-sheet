@@ -36,6 +36,7 @@ export const NavigationScreen = () => {
         <Text style={$subtitle}>The true native bottom sheet experience.</Text>
       </View>
 
+      <Button text="Open Transparent Modal" onPress={() => navigation.navigate('SheetModal')} />
       <Button text="Navigate to Screen" onPress={() => navigation.navigate('Child')} />
       <Spacer />
 

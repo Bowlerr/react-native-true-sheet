@@ -22,13 +22,14 @@ import {
 } from '../components/sheets'
 import { Button, Spacer } from '../components'
 import { BLUE, DARK, DARK_BLUE, GRAY, SPACING, SPRING_CONFIG } from '../utils'
-import { useDragChangeHandler } from '../hooks'
+import { useAppNavigation, useDragChangeHandler } from '../hooks'
 
 const AnimatedButton = Animated.createAnimatedComponent(TouchableOpacity)
 const AnimatedTrueSheet = Animated.createAnimatedComponent(TrueSheet)
 
 export const MapScreen = () => {
   const sheetRef = useRef<TrueSheet>(null)
+  const navigation = useAppNavigation<'Map'>()
 
   const basicSheet = useRef<TrueSheet>(null)
   const promptSheet = useRef<TrueSheet>(null)
@@ -90,7 +91,6 @@ export const MapScreen = () => {
         backgroundColor={DARK}
         edgeToEdge
         contentContainerStyle={{ padding: SPACING, paddingBottom: SPACING * 3 }}
-        dimmedIndex={2}
         dismissible={false}
         cornerRadius={12}
         initialIndex={1}
@@ -114,6 +114,7 @@ export const MapScreen = () => {
         <Button text="TrueSheet FlatList" onPress={() => flatListSheet.current?.present()} />
         <Button text="TrueSheet Gestures" onPress={() => gestureSheet.current?.present()} />
         <Button text="Blank Sheet" onPress={() => blankSheet.current?.present()} />
+        <Button text="Open Transparent Modal" onPress={() => navigation.navigate('SheetModal')} />
 
         <Spacer />
         <Button text="Expand" onPress={() => sheetRef.current?.resize(2)} />
