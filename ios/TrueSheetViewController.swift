@@ -6,6 +6,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import UIKit
+
 // MARK: - SizeInfo
 
 struct SizeInfo {
@@ -95,6 +97,7 @@ class TrueSheetViewController: UIViewController, UISheetPresentationControllerDe
        let sizeInfo = detentValues[rawValue] {
       delegate?.viewControllerDidChangeSize(sizeInfo)
     }
+    updateAccessibilityModalState(announce: false)
   }
 
   override func viewDidLoad() {
@@ -270,6 +273,78 @@ class TrueSheetViewController: UIViewController, UISheetPresentationControllerDe
     sheet.preferredCornerRadius = cornerRadius
     sheet.selectedDetentIdentifier = detentIdentifierForIndex(index)
 
+    updateAccessibilityModalState(announce: false)
     completion?()
+  }
+
+  // MARK: - Accessibility
+
+  private func accessibilityRootView() -> UIView {
+    if #available(iOS 15.0, *), let sheet = sheetPresentationController, let presented = sheet.presentedView {
+      return presented
+    }
+    return view
+  }
+
+  private func accessibilityOrderedElements(from view: UIView) -> [Any] {
+    var ordered: [Any] = []
+
+    // Depth-first traversal honoring explicit accessibilityElements when present
+    func collect(from node: UIView) {
+      if node.isAccessibilityElement {
+        ordered.append(node)
+        return
+      }
+
+      if let explicit = node.accessibilityElements {
+        ordered.append(contentsOf: explicit)
+        return
+      }
+
+      for sub in node.subviews {
+        collect(from: sub)
+      }
+    }
+
+    collect(from: view)
+
+    // If grabbers exist, move them to the front to ensure discovery
+    let grabbers = ordered.compactMap { $0 as? UIView }.filter { String(describing: type(of: $0)) == "_UIGrabber" }
+    if !grabbers.isEmpty {
+      let nonGrabbers = ordered.filter { element in
+        guard let v = element as? UIView else { return true }
+        return String(describing: type(of: v)) != "_UIGrabber"
+      }
+      return grabbers + nonGrabbers
+    }
+
+    return ordered
+  }
+
+  private func updateAccessibilityModalState(announce: Bool) {
+    let root = accessibilityRootView()
+    let ordered = accessibilityOrderedElements(from: root)
+
+    root.isAccessibilityElement = false
+    root.accessibilityViewIsModal = true
+    root.accessibilityElementsHidden = false
+    root.shouldGroupAccessibilityChildren = true
+    root.accessibilityElements = ordered
+
+    view.accessibilityViewIsModal = true
+    view.accessibilityElementsHidden = false
+    view.shouldGroupAccessibilityChildren = true
+
+    if announce, let first = ordered.first {
+      DispatchQueue.main.async {
+        UIAccessibility.post(notification: .screenChanged, argument: first)
+      }
+    }
+  }
+
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+
+    updateAccessibilityModalState(announce: true)
   }
 }
