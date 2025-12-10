@@ -291,6 +291,12 @@ class TrueSheetViewController: UIViewController, UISheetPresentationControllerDe
 
     // Depth-first traversal honoring explicit accessibilityElements when present
     func collect(from node: UIView) {
+      // Keep scroll views as containers so their internal navigation works correctly
+      if node is UIScrollView {
+        ordered.append(node)
+        return
+      }
+
       if node.isAccessibilityElement {
         ordered.append(node)
         return
